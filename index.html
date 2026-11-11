@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>포켓몬 상성 알리미</title>
+  <meta name="description" content="포켓몬 이름을 검색하면 타입 상성, 약점, 공략법을 알려주는 도감형 웹 서비스">
+
+  <!-- Google Fonts: 깔끔한 한국어 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+  <!-- 상대 경로 스타일시트 연결 (GitHub Pages 호환) -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <!-- 파비콘: 번개 이모지 -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+</head>
+<body>
+
+  <!-- ============================================================ -->
+  <!-- 1. 헤더: 포켓몬 도감 상단 느낌 (빨간색 + 렌즈 장식 + 표시등) -->
+  <!-- ============================================================ -->
+  <header class="pokedex-header">
+    <div class="header-inner">
+      <div class="header-decor">
+        <div class="lens" aria-hidden="true"></div>
+        <div class="indicator-lights" aria-hidden="true">
+          <span class="light light-red"></span>
+          <span class="light light-yellow"></span>
+          <span class="light light-green"></span>
+        </div>
+      </div>
+      <div class="header-text">
+        <h1 class="header-title">포켓몬 상성 알리미</h1>
+        <p class="header-subtitle">상대 포켓몬의 약점과 공략법을 한눈에 확인하세요!</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================ -->
+  <!-- 메인 컨테이너: 최대 960px, 가운데 정렬 -->
+  <!-- ============================================================ -->
+  <main class="container">
+
+    <!-- ========================================================== -->
+    <!-- 2. 검색 패널: 도감 스크린 느낌 -->
+    <!-- ========================================================== -->
+    <section class="search-panel" aria-label="포켓몬 검색">
+      <div class="screen-frame">
+        <h2 class="screen-title">🔍 포켓몬 검색</h2>
+
+        <form id="search-form" class="search-form" role="search">
+          <label for="pokemon-input" class="sr-only">포켓몬 이름</label>
+          <div class="search-input-group">
+            <input
+              type="text"
+              id="pokemon-input"
+              class="search-input"
+              placeholder="포켓몬 이름을 입력하세요 (예: 피카츄)"
+              maxlength="30"
+              autocomplete="off"
+              aria-describedby="input-hint"
+            >
+            <button type="submit" id="search-btn" class="btn btn-primary">
+              <span class="btn-text">검색</span>
+              <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+          <p id="input-hint" class="input-hint" role="alert"></p>
+        </form>
+
+        <div class="example-btns" id="example-btns">
+          <span class="example-label">빠른 검색:</span>
+          <button type="button" class="btn btn-example" data-name="피카츄">⚡ 피카츄</button>
+          <button type="button" class="btn btn-example" data-name="리자몽">🔥 리자몽</button>
+          <button type="button" class="btn btn-example" data-name="이상해꽃">🌿 이상해꽃</button>
+          <button type="button" class="btn btn-example" data-name="뮤츠">🔮 뮤츠</button>
+          <button type="button" class="btn btn-example" data-name="가브리아스">🐉 가브리아스</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- 3. 로딩 상태: 몬스터볼 애니메이션 -->
+    <!-- ========================================================== -->
+    <section id="loading-section" class="loading-section hidden" aria-live="polite">
+      <div class="pokeball-spinner" aria-hidden="true">
+        <div class="pokeball-top"></div>
+        <div class="pokeball-center"></div>
+        <div class="pokeball-bottom"></div>
+      </div>
+      <p class="loading-text">상성을 분석하고 있어요...</p>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- 4. 에러 표시 -->
+    <!-- ========================================================== -->
+    <section id="error-section" class="error-section hidden" role="alert">
+      <div class="error-card">
+        <span class="error-icon" aria-hidden="true">😥</span>
+        <p id="error-message" class="error-message"></p>
+        <button type="button" id="retry-btn" class="btn btn-secondary">다시 시도</button>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- 5. 분석 결과 카드: 도감 엔트리 스타일 -->
+    <!-- ========================================================== -->
+    <section id="result-section" class="result-section hidden" aria-live="polite">
+      <div class="result-card">
+        <div class="result-header">
+          <h2 id="result-name" class="result-name"></h2>
+          <div id="result-types" class="result-types"></div>
+        </div>
+
+        <div class="result-body">
+          <div class="matchup-section matchup-weakness">
+            <h3 class="matchup-title">
+              <span class="matchup-icon" aria-hidden="true">💥</span>
+              약점 (효과가 굉장한 타입)
+            </h3>
+            <div id="result-weaknesses" class="matchup-badges"></div>
+          </div>
+
+          <div class="matchup-section matchup-resistance">
+            <h3 class="matchup-title">
+              <span class="matchup-icon" aria-hidden="true">🛡️</span>
+              저항 (효과가 별로인 타입)
+            </h3>
+            <div id="result-resistances" class="matchup-badges"></div>
+          </div>
+
+          <div class="matchup-section matchup-immunity">
+            <h3 class="matchup-title">
+              <span class="matchup-icon" aria-hidden="true">⭕</span>
+              무효 (효과가 없는 타입)
+            </h3>
+            <div id="result-immunities" class="matchup-badges"></div>
+          </div>
+
+          <hr class="result-divider">
+
+          <div class="info-section">
+            <h3 class="info-title">
+              <span class="info-icon" aria-hidden="true">💡</span>
+              추천 공략법
+            </h3>
+            <p id="result-tips" class="info-text"></p>
+          </div>
+
+          <div class="info-section">
+            <h3 class="info-title">
+              <span class="info-icon" aria-hidden="true">⚠️</span>
+              특성 주의사항
+            </h3>
+            <p id="result-abilities" class="info-text"></p>
+          </div>
+
+          <hr class="result-divider">
+
+          <p id="result-disclaimer" class="disclaimer-text"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- 6. 최근 검색: localStorage 기반 -->
+    <!-- ========================================================== -->
+    <section id="recent-section" class="recent-section hidden" aria-label="최근 검색">
+      <div class="section-header">
+        <h2 class="section-title">🕐 최근 검색</h2>
+        <button type="button" id="clear-recent-btn" class="btn btn-text">기록 삭제</button>
+      </div>
+      <div id="recent-list" class="recent-list"></div>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- 7. 피드백 작성 폼 -->
+    <!-- ========================================================== -->
+    <section class="feedback-section" aria-label="의견 남기기">
+      <h2 class="section-title">💬 의견 남기기</h2>
+
+      <form id="feedback-form" class="feedback-form">
+        <div class="form-group">
+          <label for="feedback-author" class="form-label">닉네임 (선택)</label>
+          <input
+            type="text"
+            id="feedback-author"
+            class="form-input"
+            placeholder="익명"
+            maxlength="20"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="feedback-content" class="form-label">내용 <span class="required">*필수</span></label>
+          <textarea
+            id="feedback-content"
+            class="form-textarea"
+            placeholder="서비스에 대한 의견을 남겨주세요 (최대 500자)"
+            maxlength="500"
+            rows="3"
+            required
+          ></textarea>
+          <p class="char-count"><span id="char-current">0</span> / 500자</p>
+        </div>
+
+        <p class="privacy-notice">
+          ⚠️ 전화번호, 이메일, 주소 등 <strong>개인정보를 입력하지 마세요.</strong>
+          의견은 모든 사용자에게 공개됩니다.
+        </p>
+
+        <button type="submit" id="feedback-submit-btn" class="btn btn-primary btn-block">
+          <span class="btn-text">의견 전송</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+
+        <p id="feedback-status" class="feedback-status" role="alert"></p>
+      </form>
+    </section>
+
+    <!-- ========================================================== -->
+    <!-- 8. 피드백 목록: 최신순 -->
+    <!-- ========================================================== -->
+    <section class="feedback-list-section" aria-label="최신 의견">
+      <h2 class="section-title">📋 최신 의견</h2>
+      <div id="feedback-list" class="feedback-list">
+        <p class="empty-state" id="feedback-empty">
+          아직 의견이 없어요. 첫 번째 의견을 남겨보세요! 🎉
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!-- 9. 푸터 -->
+  <!-- ============================================================ -->
+  <footer class="pokedex-footer">
+    <div class="footer-inner">
+      <p class="footer-text">
+        이 서비스는 <strong>비공식 팬 프로젝트</strong>이며, 주식회사 포켓몬과 관련이 없습니다.
+      </p>
+      <p class="footer-text">
+        포켓몬의 타입·특성·상성 정보는 게임 버전, 폼, 세대에 따라 달라질 수 있습니다.
+      </p>
+    </div>
+  </footer>
+
+  <!-- 상대 경로 스크립트 연결 (GitHub Pages 호환) -->
+  <script src="./js/app.js"></script>
+</body>
+</html>
