@@ -4,6 +4,7 @@
   "description": "포켓몬 상성 알리미 — 포켓몬 이름으로 타입 상성, 약점 배율, 공략법을 알려주는 웹 서비스",
   "private": true,
   "scripts": {
+    "build": "echo 'No build required for vanilla JS'",
     "dev": "vercel dev",
     "start": "node server.js",
     "test": "echo \"테스트를 실행합니다\" && exit 0"
@@ -22,4 +23,3 @@
   },
   "license": "UNLICENSED"
 }
-
